@@ -3,9 +3,9 @@ import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
-import { createInterface } from "node:readline";
 import { generateTranscript } from "./generate";
 import { createGist, injectGistPreviewJs } from "./gist";
+import { formatSessionLine, pickSession } from "./picker";
 import { findAllSessions, findRecentSessions } from "./sessions";
 
 const HELP = `pi-transcript — Convert pi sessions to clean HTML transcripts
@@ -120,14 +120,13 @@ async function main(): Promise<void> {
 			process.exit(0);
 		}
 
-		console.log(`\nRecent pi sessions (${sessions.length}):\n`);
+		const width = process.stdout.columns || 100;
+		const summaryWidth = Math.max(20, width - 35); // 4 (num) + 29 (date+size) + 2
+		console.log();
 		for (let i = 0; i < sessions.length; i++) {
-			const s = sessions[i];
-			const date = s.mtime.toISOString().slice(0, 16).replace("T", " ");
-			const sizeKb = (s.size / 1024).toFixed(0).padStart(5);
 			const num = String(i + 1).padStart(2);
-			console.log(`  ${num}. [${date}] ${sizeKb}KB  ${s.project}`);
-			console.log(`      ${s.summary}`);
+			const line = formatSessionLine(sessions[i], summaryWidth);
+			console.log(`  ${num}. ${line}`);
 		}
 		console.log("\nConvert with: pi-transcript <number> or pi-transcript <file.jsonl>");
 		process.exit(0);
@@ -193,30 +192,12 @@ async function main(): Promise<void> {
 			process.exit(0);
 		}
 
-		console.log("\nRecent pi sessions:\n");
-		for (let i = 0; i < sessions.length; i++) {
-			const s = sessions[i];
-			const date = s.mtime.toISOString().slice(0, 16).replace("T", " ");
-			const sizeKb = (s.size / 1024).toFixed(0).padStart(5);
-			const num = String(i + 1).padStart(2);
-			console.log(`  ${num}. [${date}] ${sizeKb}KB  ${s.project}`);
-			console.log(`      ${s.summary}`);
+		const selected = await pickSession(sessions);
+		if (!selected) {
+			console.log("No session selected.");
+			process.exit(0);
 		}
-
-		const rl = createInterface({ input: process.stdin, output: process.stdout });
-		const answer = await new Promise<string>((resolve) => {
-			rl.question("\nSelect a session number (or q to quit): ", resolve);
-		});
-		rl.close();
-
-		if (answer === "q" || answer === "") process.exit(0);
-
-		const idx = Number.parseInt(answer, 10) - 1;
-		if (Number.isNaN(idx) || idx < 0 || idx >= sessions.length) {
-			console.error("Invalid selection.");
-			process.exit(1);
-		}
-		sessionPath = sessions[idx].path;
+		sessionPath = selected.path;
 	}
 
 	if (!existsSync(sessionPath)) {
