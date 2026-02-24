@@ -4,7 +4,7 @@
   "description": "Convert pi coding agent sessions to clean, mobile-friendly HTML transcripts",
   "type": "module",
   "bin": {
-    "pi-transcript": "./dist/cli.js"
+    "pi-transcript": "dist/cli.js"
   },
   "scripts": {
     "build": "bun build src/cli.ts --outdir dist --target bun",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/psg2/pi-transcript.git"
+    "url": "git+https://github.com/psg2/pi-transcript.git"
   },
   "homepage": "https://github.com/psg2/pi-transcript#readme",
   "bugs": {
