@@ -7,9 +7,12 @@ Inspired by [claude-code-transcripts](https://github.com/simonw/claude-code-tran
 ## Installation
 
 ```bash
-npm install -g pi-transcript
-# or use directly:
-npx pi-transcript
+# Run directly with bun
+bunx @psg2/pi-transcript
+
+# Or install globally
+bun install -g @psg2/pi-transcript
+pi-transcript
 ```
 
 ## Usage
