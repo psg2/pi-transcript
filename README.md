@@ -7,11 +7,12 @@ Inspired by [claude-code-transcripts](https://github.com/simonw/claude-code-tran
 ## Installation
 
 ```bash
-# Run directly with bun
+# Run directly (no install needed)
+npx @psg2/pi-transcript
 bunx @psg2/pi-transcript
 
 # Or install globally
-bun install -g @psg2/pi-transcript
+npm install -g @psg2/pi-transcript
 pi-transcript
 ```
 
