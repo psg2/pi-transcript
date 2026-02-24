@@ -33,7 +33,7 @@ pi-transcript /path/to/session.jsonl
 pi-transcript /path/to/session.jsonl -o ./output
 ```
 
-### Pick by number from list
+### Pick by number from list 
 
 ```bash
 pi-transcript --list        # Show numbered list of recent sessions
@@ -67,12 +67,36 @@ The preview URL uses [gisthost.github.io](https://gisthost.github.io/) to render
 
 **Requires:** [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated (`gh auth login`).
 
+### Upload to S3 + CloudFront
+
+Use `--s3` to upload transcripts to a private S3 bucket fronted by CloudFront:
+
+```bash
+pi-transcript 3 --s3
+pi-transcript 3 --s3 --s3-bucket my-bucket --s3-url https://d1234abcd.cloudfront.net
+```
+
+Or configure via environment variables:
+
+```bash
+export PI_TRANSCRIPT_S3_BUCKET=my-pi-transcripts
+export PI_TRANSCRIPT_CLOUDFRONT_URL=https://d1234abcd.cloudfront.net
+pi-transcript 3 --s3
+```
+
+**Requires:** [AWS CLI](https://aws.amazon.com/cli/) installed and configured (`aws configure`).
+
+For full setup instructions including Google OAuth authentication via Lambda@Edge, see [docs/private-hosting.md](docs/private-hosting.md).
+
 ## Options
 
 | Option | Description |
 |--------|-------------|
 | `-o, --output <dir>` | Output directory (default: temp dir, auto-opens browser) |
 | `--gist` | Upload to GitHub Gist and output a shareable preview URL |
+| `--s3` | Upload to S3 + CloudFront |
+| `--s3-bucket <name>` | S3 bucket name (or `PI_TRANSCRIPT_S3_BUCKET` env var) |
+| `--s3-url <url>` | CloudFront URL (or `PI_TRANSCRIPT_CLOUDFRONT_URL` env var) |
 | `-l, --list` | List recent sessions with numbers |
 | `-a, --all` | Convert all sessions to an archive |
 | `--limit <n>` | Number of sessions to show (default: 15) |

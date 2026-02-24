@@ -7,6 +7,7 @@ import { generateTranscript } from "./generate";
 import { createGist, injectGistPreviewJs } from "./gist";
 import { deployToPages } from "./pages";
 import { formatSessionLine, pickSession } from "./picker";
+import { getS3Config, uploadToS3 } from "./s3";
 import { findAllSessions, findRecentSessions } from "./sessions";
 
 const HELP = `pi-transcript — Convert pi sessions to clean HTML transcripts
@@ -23,6 +24,9 @@ Options:
   --gist                 Upload to GitHub Gist and output a preview URL (requires gh CLI)
   --pages                Deploy to Cloudflare Pages (requires wrangler CLI)
   --pages-project <name> Cloudflare Pages project name (default: pi-transcripts)
+  --s3                   Upload to S3 + CloudFront (requires aws CLI)
+  --s3-bucket <name>     S3 bucket name (or PI_TRANSCRIPT_S3_BUCKET env var)
+  --s3-url <url>         CloudFront URL (or PI_TRANSCRIPT_CLOUDFRONT_URL env var)
   --limit <n>            Number of sessions to show (default: 15)
   --open                 Open in browser after generating
   --no-open              Don't auto-open in browser
@@ -36,6 +40,9 @@ function parseArgs(argv: string[]) {
 		all: false,
 		gist: false,
 		pages: false,
+		s3: false,
+		s3Bucket: "",
+		s3Url: "",
 		pagesProject: process.env.PI_TRANSCRIPT_PAGES_PROJECT || "pi-transcripts",
 		open: false,
 		noOpen: false,
@@ -65,6 +72,15 @@ function parseArgs(argv: string[]) {
 				break;
 			case "--pages-project":
 				flags.pagesProject = argv[++i] ?? "pi-transcripts";
+				break;
+			case "--s3":
+				flags.s3 = true;
+				break;
+			case "--s3-bucket":
+				flags.s3Bucket = argv[++i] ?? "";
+				break;
+			case "--s3-url":
+				flags.s3Url = argv[++i] ?? "";
 				break;
 			case "--open":
 				flags.open = true;
@@ -250,8 +266,24 @@ async function main(): Promise<void> {
 		}
 	}
 
+	if (flags.s3) {
+		const config = getS3Config(flags.s3Bucket, flags.s3Url);
+		console.log(`\nUploading to S3 (${config.bucket})...`);
+		const s3Result = uploadToS3(outputDir, config, result.projectName);
+		console.log(`  S3:      ${s3Result.s3Path}`);
+		console.log(`  URL:     ${s3Result.url}`);
+		if (flags.open) {
+			try {
+				if (process.platform === "darwin") execSync(`open "${s3Result.url}"`);
+				else if (process.platform === "linux") execSync(`xdg-open "${s3Result.url}"`);
+			} catch {
+				// ignore
+			}
+		}
+	}
+
 	const shouldOpen =
-		flags.open || (!explicitOutput && !flags.noOpen && !flags.gist && !flags.pages);
+		flags.open || (!explicitOutput && !flags.noOpen && !flags.gist && !flags.pages && !flags.s3);
 	if (shouldOpen) openInBrowser(join(outputDir, "index.html"));
 }
 

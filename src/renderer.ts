@@ -28,6 +28,9 @@ function formatCost(cost: number): string {
 	return cost < 0.01 ? `$${cost.toFixed(4)}` : `$${cost.toFixed(2)}`;
 }
 
+// Inline SVG favicon — pi symbol on dark background
+const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1117'/><text x='16' y='24' text-anchor='middle' font-size='22'>🥧</text></svg>">`;
+
 function formatToolStats(toolCounts: Record<string, number>): string {
 	const keys = Object.keys(toolCounts);
 	if (keys.length === 0) return "";
@@ -304,6 +307,7 @@ export function generatePageHtml(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>pi transcript${titleProject} – page ${pageNum}</title>
+${FAVICON}
 <style>${CSS}</style>
 </head>
 <body>
@@ -385,6 +389,7 @@ export function generateIndexHtml(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>pi transcript${titleProject} – Index</title>
+${FAVICON}
 <style>${CSS}</style>
 </head>
 <body>
