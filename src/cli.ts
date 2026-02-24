@@ -120,8 +120,8 @@ async function main(): Promise<void> {
 			process.exit(0);
 		}
 
-		const width = process.stdout.columns || 100;
-		const summaryWidth = Math.max(20, width - 35); // 4 (num) + 29 (date+size) + 2
+		const width = process.stdout.columns || 120;
+		const summaryWidth = Math.max(20, width - 57); // 4 (num) + 16 (date) + 7 (size) + 20 (project) + gaps
 		console.log();
 		for (let i = 0; i < sessions.length; i++) {
 			const num = String(i + 1).padStart(2);
