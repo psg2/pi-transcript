@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { generateTranscript } from "./generate";
 import { createGist, injectGistPreviewJs } from "./gist";
+import { deployToPages } from "./pages";
 import { formatSessionLine, pickSession } from "./picker";
 import { findAllSessions, findRecentSessions } from "./sessions";
 
@@ -20,6 +21,8 @@ Usage:
 Options:
   -o, --output <dir>     Output directory (default: temp dir, auto-opens browser)
   --gist                 Upload to GitHub Gist and output a preview URL (requires gh CLI)
+  --pages                Deploy to Cloudflare Pages (requires wrangler CLI)
+  --pages-project <name> Cloudflare Pages project name (default: pi-transcripts)
   --limit <n>            Number of sessions to show (default: 15)
   --open                 Open in browser after generating
   --no-open              Don't auto-open in browser
@@ -32,6 +35,8 @@ function parseArgs(argv: string[]) {
 		list: false,
 		all: false,
 		gist: false,
+		pages: false,
+		pagesProject: process.env.PI_TRANSCRIPT_PAGES_PROJECT || "pi-transcripts",
 		open: false,
 		noOpen: false,
 		help: false,
@@ -54,6 +59,12 @@ function parseArgs(argv: string[]) {
 				break;
 			case "--gist":
 				flags.gist = true;
+				break;
+			case "--pages":
+				flags.pages = true;
+				break;
+			case "--pages-project":
+				flags.pagesProject = argv[++i] ?? "pi-transcripts";
 				break;
 			case "--open":
 				flags.open = true;
@@ -230,7 +241,17 @@ async function main(): Promise<void> {
 		console.log(`  Files:   ${outputDir}`);
 	}
 
-	const shouldOpen = flags.open || (!explicitOutput && !flags.noOpen && !flags.gist);
+	if (flags.pages) {
+		console.log(`\nDeploying to Cloudflare Pages (${flags.pagesProject})...`);
+		const deployment = deployToPages(outputDir, flags.pagesProject);
+		if (deployment.url) {
+			console.log(`  URL:     ${deployment.url}`);
+			if (flags.open) openInBrowser(deployment.url.replace("file://", ""));
+		}
+	}
+
+	const shouldOpen =
+		flags.open || (!explicitOutput && !flags.noOpen && !flags.gist && !flags.pages);
 	if (shouldOpen) openInBrowser(join(outputDir, "index.html"));
 }
 
