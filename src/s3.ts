@@ -97,7 +97,7 @@ export function uploadToS3(
 
 	try {
 		execSync(
-			`aws s3 sync "${outputDir}" "${s3Path}" --content-type "text/html" --exclude "*" --include "*.html"`,
+			`aws s3 sync "${outputDir}" "${s3Path}" --content-type "text/html" --cache-control "max-age=60" --exclude "*" --include "*.html"`,
 			{ encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] },
 		);
 	} catch (err) {

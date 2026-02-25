@@ -396,6 +396,7 @@ ${FAVICON}
 <div class="container">
 <div class="header-row">
 <h1>🥧 pi transcript${titleProject}</h1>
+<button class="download-btn" onclick="downloadTranscript()" title="Download all pages as a single HTML file">⬇ Download</button>
 </div>
 ${headerInfo}
 ${pagination}
@@ -404,6 +405,11 @@ ${indexItemsHtml}
 ${pagination}
 </div>
 <script>${JS}</script>
+<script>
+var TOTAL_PAGES = ${totalPages};
+var PROJECT_NAME = ${JSON.stringify(projectName || "transcript")};
+${DOWNLOAD_JS}
+</script>
 </body>
 </html>`;
 }
@@ -430,6 +436,9 @@ h1 { font-size: 1.4rem; margin-bottom: 16px; }
 a { color: var(--link); }
 .header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
 .header-row h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.download-btn { background: var(--card-bg); color: var(--link); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+.download-btn:hover { background: rgba(88,166,255,0.1); }
+.download-btn:disabled { opacity: 0.5; cursor: wait; }
 .session-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; }
 .message { margin-bottom: 12px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
 .message.user { background: var(--user-bg); border-left: 3px solid var(--user-border); }
@@ -549,4 +558,54 @@ document.querySelectorAll('.truncatable').forEach(function(w) {
     });
   }
 });
+`;
+
+const DOWNLOAD_JS = `
+async function downloadTranscript() {
+  var btn = document.querySelector('.download-btn');
+  btn.disabled = true;
+  btn.textContent = '⬇ Downloading...';
+  try {
+    var pages = [];
+    for (var i = 1; i <= TOTAL_PAGES; i++) {
+      var pad = String(i).padStart(3, '0');
+      var res = await fetch('page-' + pad + '.html');
+      if (!res.ok) throw new Error('Failed to fetch page ' + i);
+      pages.push(await res.text());
+    }
+    var parser = new DOMParser();
+    var style = '';
+    var allMessages = [];
+    for (var j = 0; j < pages.length; j++) {
+      var doc = parser.parseFromString(pages[j], 'text/html');
+      if (j === 0) style = doc.querySelector('style').textContent;
+      doc.querySelectorAll('.message').forEach(function(m) { allMessages.push(m.outerHTML); });
+    }
+    var indexDoc = parser.parseFromString(document.documentElement.outerHTML, 'text/html');
+    var container = indexDoc.querySelector('.container');
+    var headerRow = container.querySelector('.header-row');
+    var sessionInfo = container.querySelector('.session-info');
+    var metaP = container.querySelector('p[style]');
+    var html = '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n' +
+      '<meta charset="UTF-8">\\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\\n' +
+      '<title>' + indexDoc.title.replace(' – Index', '') + '</title>\\n' +
+      '<style>' + style + '</style>\\n</head>\\n<body>\\n<div class="container">\\n' +
+      (headerRow ? headerRow.outerHTML.replace(/<button[^]*?<\\/button>/, '') + '\\n' : '') +
+      (sessionInfo ? sessionInfo.outerHTML + '\\n' : '') +
+      (metaP ? metaP.outerHTML + '\\n' : '') +
+      allMessages.join('\\n') +
+      '\\n</div>\\n</body>\\n</html>';
+    var blob = new Blob([html], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = PROJECT_NAME.replace(/[\\/\\\\]/g, '-') + '-transcript.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (e) {
+    alert('Download failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ Download';
+  }
+}
 `;
