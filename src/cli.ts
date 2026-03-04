@@ -27,7 +27,7 @@ Options:
   --s3                   Upload to S3 + CloudFront (requires aws CLI)
   --s3-bucket <name>     S3 bucket name (or PI_TRANSCRIPT_S3_BUCKET env var)
   --s3-url <url>         CloudFront URL (or PI_TRANSCRIPT_CLOUDFRONT_URL env var)
-  --limit <n>            Number of sessions to show (default: 15)
+  --limit <n>            Number of sessions to show (default: all)
   --open                 Open in browser after generating
   --no-open              Don't auto-open in browser
   -h, --help             Show this help
@@ -49,7 +49,7 @@ function parseArgs(argv: string[]) {
 		help: false,
 		version: false,
 		output: "",
-		limit: 15,
+		limit: 0,
 		positional: "",
 	};
 
@@ -141,7 +141,7 @@ async function main(): Promise<void> {
 
 	// ─── List mode ───────────────────────────────────────────────
 	if (flags.list) {
-		const sessions = findRecentSessions(flags.limit);
+		const sessions = findRecentSessions(flags.limit || undefined);
 		if (sessions.length === 0) {
 			console.log("No pi sessions found in ~/.pi/agent/sessions/");
 			process.exit(0);
@@ -203,7 +203,7 @@ async function main(): Promise<void> {
 	// Number from list
 	if (sessionPath && /^\d+$/.test(sessionPath)) {
 		const idx = Number.parseInt(sessionPath, 10) - 1;
-		const sessions = findRecentSessions(50);
+		const sessions = findRecentSessions();
 		if (idx < 0 || idx >= sessions.length) {
 			console.error(`Session #${idx + 1} not found. Use --list to see available sessions.`);
 			process.exit(1);
@@ -213,7 +213,7 @@ async function main(): Promise<void> {
 
 	// Interactive picker
 	if (!sessionPath) {
-		const sessions = findRecentSessions(flags.limit);
+		const sessions = findRecentSessions(flags.limit || undefined);
 		if (sessions.length === 0) {
 			console.log("No pi sessions found in ~/.pi/agent/sessions/");
 			process.exit(0);

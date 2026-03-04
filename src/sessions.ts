@@ -105,7 +105,7 @@ export function findAllSessions(sessionsDir = DEFAULT_SESSIONS_DIR): ProjectInfo
 }
 
 /** Find recent sessions across all projects, flattened */
-export function findRecentSessions(limit = 15, sessionsDir = DEFAULT_SESSIONS_DIR): SessionInfo[] {
+export function findRecentSessions(limit?: number, sessionsDir = DEFAULT_SESSIONS_DIR): SessionInfo[] {
 	const projects = findAllSessions(sessionsDir);
 	const all: SessionInfo[] = [];
 
@@ -116,5 +116,5 @@ export function findRecentSessions(limit = 15, sessionsDir = DEFAULT_SESSIONS_DI
 	}
 
 	all.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-	return all.slice(0, limit);
+	return limit ? all.slice(0, limit) : all;
 }
