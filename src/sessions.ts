@@ -3,6 +3,11 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ProjectInfo, SessionInfo } from "./types";
 
+/** Encode a directory path to the folder name format used by pi */
+export function encodeFolderName(dirPath: string): string {
+	return `--${dirPath.replace(/^\//, "").replace(/\/$/, "").replace(/\//g, "-")}--`;
+}
+
 const DEFAULT_SESSIONS_DIR = join(homedir(), ".pi", "agent", "sessions");
 
 /** Decode the encoded folder name back to a readable project path */
@@ -105,11 +110,19 @@ export function findAllSessions(sessionsDir = DEFAULT_SESSIONS_DIR): ProjectInfo
 }
 
 /** Find recent sessions across all projects, flattened */
-export function findRecentSessions(limit?: number, sessionsDir = DEFAULT_SESSIONS_DIR): SessionInfo[] {
+export function findRecentSessions(options?: {
+	limit?: number;
+	cwd?: string;
+	sessionsDir?: string;
+}): SessionInfo[] {
+	const { limit, cwd, sessionsDir = DEFAULT_SESSIONS_DIR } = options ?? {};
 	const projects = findAllSessions(sessionsDir);
 	const all: SessionInfo[] = [];
 
+	const cwdFolder = cwd ? encodeFolderName(cwd) : null;
+
 	for (const p of projects) {
+		if (cwdFolder && p.projectFolder !== cwdFolder) continue;
 		for (const s of p.sessions) {
 			all.push(s);
 		}

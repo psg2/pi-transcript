@@ -28,6 +28,7 @@ Options:
   --s3-bucket <name>     S3 bucket name (or PI_TRANSCRIPT_S3_BUCKET env var)
   --s3-url <url>         CloudFront URL (or PI_TRANSCRIPT_CLOUDFRONT_URL env var)
   --limit <n>            Number of sessions to show (default: all)
+  --cwd                  Only show sessions from the current working directory
   --open                 Open in browser after generating
   --no-open              Don't auto-open in browser
   -h, --help             Show this help
@@ -50,6 +51,7 @@ function parseArgs(argv: string[]) {
 		version: false,
 		output: "",
 		limit: 0,
+		cwd: false,
 		positional: "",
 	};
 
@@ -95,6 +97,9 @@ function parseArgs(argv: string[]) {
 			case "--limit":
 				flags.limit = Number.parseInt(argv[++i] ?? "15", 10);
 				break;
+			case "--cwd":
+				flags.cwd = true;
+				break;
 			case "-h":
 			case "--help":
 				flags.help = true;
@@ -139,17 +144,36 @@ async function main(): Promise<void> {
 		process.exit(0);
 	}
 
+	// Helper to build session query options
+	const sessionQuery = {
+		limit: flags.limit || undefined,
+		cwd: flags.cwd ? process.cwd() : undefined,
+	};
+
 	// ─── List mode ───────────────────────────────────────────────
 	if (flags.list) {
-		const sessions = findRecentSessions(flags.limit || undefined);
+		const sessions = findRecentSessions(sessionQuery);
+		const totalSessions = flags.cwd
+			? findRecentSessions().length
+			: sessions.length;
 		if (sessions.length === 0) {
-			console.log("No pi sessions found in ~/.pi/agent/sessions/");
+			console.log(
+				flags.cwd
+					? `No pi sessions found for ${process.cwd()}`
+					: "No pi sessions found in ~/.pi/agent/sessions/",
+			);
 			process.exit(0);
 		}
 
+		const countLabel =
+			sessions.length < totalSessions
+				? `${sessions.length}/${totalSessions}`
+				: `${sessions.length}`;
+		const filterLabel = flags.cwd ? ` in ${process.cwd()}` : "";
+
 		const width = process.stdout.columns || 120;
 		const summaryWidth = Math.max(20, width - 57); // 4 (num) + 16 (date) + 7 (size) + 20 (project) + gaps
-		console.log();
+		console.log(`\n${countLabel} sessions${filterLabel}:\n`);
 		for (let i = 0; i < sessions.length; i++) {
 			const num = String(i + 1).padStart(2);
 			const line = formatSessionLine(sessions[i], summaryWidth);
@@ -203,7 +227,7 @@ async function main(): Promise<void> {
 	// Number from list
 	if (sessionPath && /^\d+$/.test(sessionPath)) {
 		const idx = Number.parseInt(sessionPath, 10) - 1;
-		const sessions = findRecentSessions();
+		const sessions = findRecentSessions(sessionQuery);
 		if (idx < 0 || idx >= sessions.length) {
 			console.error(`Session #${idx + 1} not found. Use --list to see available sessions.`);
 			process.exit(1);
@@ -213,13 +237,23 @@ async function main(): Promise<void> {
 
 	// Interactive picker
 	if (!sessionPath) {
-		const sessions = findRecentSessions(flags.limit || undefined);
+		const sessions = findRecentSessions(sessionQuery);
+		const totalSessions = flags.cwd
+			? findRecentSessions().length
+			: sessions.length;
 		if (sessions.length === 0) {
-			console.log("No pi sessions found in ~/.pi/agent/sessions/");
+			console.log(
+				flags.cwd
+					? `No pi sessions found for ${process.cwd()}`
+					: "No pi sessions found in ~/.pi/agent/sessions/",
+			);
 			process.exit(0);
 		}
 
-		const selected = await pickSession(sessions);
+		const selected = await pickSession(sessions, {
+			totalCount: totalSessions,
+			projectFilter: flags.cwd ? process.cwd() : undefined,
+		});
 		if (!selected) {
 			console.log("No session selected.");
 			process.exit(0);

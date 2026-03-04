@@ -34,7 +34,10 @@ export function formatSessionLine(s: SessionInfo, summaryWidth: number): string 
 }
 
 /** Interactive arrow-key picker. Returns selected session or null if cancelled. */
-export async function pickSession(sessions: SessionInfo[]): Promise<SessionInfo | null> {
+export async function pickSession(
+	sessions: SessionInfo[],
+	options?: { totalCount?: number; projectFilter?: string },
+): Promise<SessionInfo | null> {
 	const width = process.stdout.columns || 120;
 	// 4 (inquirer prefix) + 16 (date) + 2 + 7 (size) + 2 + 20 (project) + 2 = 53 fixed
 	const summaryWidth = Math.max(20, width - 55);
@@ -44,9 +47,17 @@ export async function pickSession(sessions: SessionInfo[]): Promise<SessionInfo 
 		value: s,
 	}));
 
+	const total = options?.totalCount ?? sessions.length;
+	const countLabel =
+		sessions.length < total
+			? `${sessions.length}/${total} sessions`
+			: `${sessions.length} sessions`;
+	const filterLabel = options?.projectFilter ? ` in ${options.projectFilter}` : "";
+	const message = `Select a session to convert (${countLabel}${filterLabel}):`;
+
 	try {
 		const selected = await select({
-			message: "Select a session to convert:",
+			message,
 			choices,
 			loop: false,
 		});
