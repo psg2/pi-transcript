@@ -153,9 +153,7 @@ async function main(): Promise<void> {
 	// ─── List mode ───────────────────────────────────────────────
 	if (flags.list) {
 		const sessions = findRecentSessions(sessionQuery);
-		const totalSessions = flags.cwd
-			? findRecentSessions().length
-			: sessions.length;
+		const totalSessions = flags.cwd ? findRecentSessions().length : sessions.length;
 		if (sessions.length === 0) {
 			console.log(
 				flags.cwd
@@ -238,9 +236,7 @@ async function main(): Promise<void> {
 	// Interactive picker
 	if (!sessionPath) {
 		const sessions = findRecentSessions(sessionQuery);
-		const totalSessions = flags.cwd
-			? findRecentSessions().length
-			: sessions.length;
+		const totalSessions = flags.cwd ? findRecentSessions().length : sessions.length;
 		if (sessions.length === 0) {
 			console.log(
 				flags.cwd
