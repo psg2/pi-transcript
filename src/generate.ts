@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { groupConversations, parseSessionFile } from "./parser";
-import { PROMPTS_PER_PAGE, generateIndexHtml, generatePageHtml } from "./renderer";
+import { generateIndexHtml, generatePageHtml, PROMPTS_PER_PAGE } from "./renderer";
 import { getProjectName } from "./sessions";
 import type { GenerationResult } from "./types";
 
