@@ -130,6 +130,7 @@ The CLI uploads HTML files to S3 under short, readable paths (e.g. `project-name
 ## Security Notes
 
 - The S3 bucket has no public access; CloudFront is the only access path
+- The bucket policy rejects every S3 request made without TLS
 - Lambda@Edge validates Google OAuth tokens and checks the email domain
 - Session cookies are signed with HMAC-SHA256 and expire after 24 hours
 - `AllowedEmailDomains` can be a domain (`yourdomain.com`) or a specific email (`user@gmail.com`)
